@@ -125,11 +125,13 @@ class burphttp:
         """保存响应内容到文件
         
         Args:
-            file_path: 保存响应内容的文件路径
+            file_path: 保存响应内容的文件路径，如果只提供文件名则保存在当前目录
         """
         try:
-            # 确保目标目录存在
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            # 如果file_path包含目录路径，则确保目录存在
+            dirname = os.path.dirname(file_path)
+            if dirname:
+                os.makedirs(dirname, exist_ok=True)
             
             # 构建完整的响应内容，包括状态行、头部和主体
             content = []
@@ -150,11 +152,13 @@ class burphttp:
         """保存响应体到文件
         
         Args:
-            file_path: 保存响应体的文件路径
+            file_path: 保存响应体的文件路径，如果只提供文件名则保存在当前目录
         """
         try:
-            # 确保目标目录存在
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            # 如果file_path包含目录路径，则确保目录存在
+            dirname = os.path.dirname(file_path)
+            if dirname:
+                os.makedirs(dirname, exist_ok=True)
             
             # 写入响应体
             with open(file_path, 'w', encoding='utf-8') as f:
