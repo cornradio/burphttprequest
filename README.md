@@ -20,6 +20,11 @@ pip install burphttprequest
 ## 使用示例
 更多实例见 [test/main.py](test/main.py)
 
+```bash
+pip install burphttp
+```
+
+
 ```python
 from burphttp import burphttp
 
