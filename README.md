@@ -5,10 +5,9 @@
 
 ## 特性
 
-- 从文件读取HTTP请求
+- 从文件读取HTTP请求 包括 GET POST
 - 支持设置HTTP代理
 - 支持设置Cookie
-- 自动处理响应编码
 - 支持保存响应内容到文件
 - 支持移除压缩编码
 
@@ -61,6 +60,10 @@ Content-Type: application/json
 
 {"key": "value"}
 ```
+
+可以用火狐浏览器获取原始请求  
+![image](https://github.com/user-attachments/assets/a753e262-44f2-4b06-9702-00e59dfbdb41)
+
 
 ## 许可证
 
