@@ -1,0 +1,13 @@
+POST /api/writefile/1.txt HTTP/1.1
+Host: 139.196.171.60:88
+Content-Length: 44
+Accept-Language: zh-CN
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.100 Safari/537.36
+Content-Type: application/json
+Accept: */*
+Origin: http://139.196.171.60:88
+Referer: http://139.196.171.60:88/
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+
+{"content":"never going to give you up \n!"}
