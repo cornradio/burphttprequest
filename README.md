@@ -61,8 +61,16 @@ Content-Type: application/json
 {"key": "value"}
 ```
 
-可以用火狐浏览器获取原始请求  
-![image](https://github.com/user-attachments/assets/a753e262-44f2-4b06-9702-00e59dfbdb41)
+可以用火狐浏览器获取原始请求
+GET: 
+- 右键-复制请求头（Q）
+POST:
+- 右键-复制请求头（Q）
+- 手动起一个空行
+- 右键-复制Post数据
+
+![image](https://github.com/user-attachments/assets/088cd298-9886-4756-982a-aa206ba57025)
+
 
 
 ## 许可证
