@@ -71,6 +71,8 @@ POST:
 
 ![image](https://github.com/user-attachments/assets/088cd298-9886-4756-982a-aa206ba57025)
 
+如果你不确定自己的请求体是否可用，可以借助这个vscode插件： 
+https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 
 
 ## 许可证
