@@ -2,11 +2,6 @@
 
 一个简单易用的Python HTTP请求处理库，支持从文件读取请求、设置代理、保存响应等功能。
 
-## 安装
-
-```bash
-pip install burphttprequest
-```
 
 ## 特性
 
