@@ -16,6 +16,7 @@ def main():
     # bq.parse_request_from_file("test/proxy.http") # 解析请求从文件
     bq.set_cookie("session=abc123; user=test; token=xyz789")# 设置cookie示例
     bq.set_proxy("http://127.0.0.1:7890") # 设置代理
+    bq.set_host("www.baidu.com") # 设置host
     bq.fixEncoding() #remove Accept-Encoding: gzip, deflate, br
     bq.send_request() #send request
 

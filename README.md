@@ -75,6 +75,6 @@ POST:
 https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 
 
-## 许可证
+## 更新日志
 
-MIT License
+- v0.1.4 2025-01-13 支持设置host

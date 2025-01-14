@@ -186,6 +186,18 @@ class burphttp:
             print(f"从文件读取请求失败: {str(e)}")
             raise
 
+    def set_host(self, host: str) -> None:
+        """设置请求的Host头
+        
+        Args:
+            host: 主机名，格式如 "example.com" 或 "example.com:8080"
+        """
+        # 删除原来的host
+        if 'Host' in self.headers:
+            del self.headers['Host']
+        # 设置新的host
+        self.headers['Host'] = host
+
 def process_request(input_data: Union[str, bytes]) -> str:
     """处理 HTTP 请求并返回响应"""
     parser = burphttp()
