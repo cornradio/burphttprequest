@@ -8,4 +8,3 @@ with open('curlcommand.txt', 'r') as f:
 bq = burphttp()
 print(bq.parse_curl(request_content))
 bq.send_request()
-bq.save_response_body("response.http")

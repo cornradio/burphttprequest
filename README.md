@@ -10,6 +10,7 @@
 - 支持设置Cookie
 - 支持保存响应内容到文件
 - 支持移除压缩编码
+- 支持解析curl(bash)请求（chrome 浏览器右键-复制请求）
 
 ## 使用示例
 更多实例见 [test/main.py](test/main.py)
@@ -28,11 +29,14 @@ bq = burphttp()
 # 从文件读取请求
 bq.parse_request_from_file("request.http")
 
+# 从curl命令读取请求
+bq.parse_request_from_curl("curlcommand.txt")
+
 # 设置代理（可选）
 bq.set_proxy("http://127.0.0.1:8080")
 
 # 设置Cookie（可选）
-bq.set_cookie("session=abc123; user=test")
+bq.set_cookie("session=abc123; user=test; phpsessionid=123456")
 
 # 移除压缩编码（可选）
 bq.fixEncoding()
@@ -78,4 +82,4 @@ https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 ## 更新日志
 
 - v0.1.4 2025-01-13 支持设置host
-- v0.1.5 2025-01-14 支持解析curl(bash)请求
+- v0.1.6 2025-01-14 支持解析curl(bash)请求 

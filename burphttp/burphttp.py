@@ -234,11 +234,23 @@ class burphttp:
                 self.headers[key.strip()] = value.strip()
         
         # 解析请求体
-        data_match = re.search(r'--data\s+["\']([^"\']+)["\']', curl_command)
-        if data_match:
-            self.body = data_match.group(1)
-            if 'Content-Type' not in self.headers:
-                self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        data_patterns = [
+            r'--data\s+[\'"](.*?)[\'"](?:\s|$)',
+            r'--data-raw\s+[\'"](.*?)[\'"](?:\s|$)',
+            r'--data\s+(\{.*?\})(?:\s|$)',
+            r'--data-raw\s+(\{.*?\})(?:\s|$)'
+        ]
+        
+        for pattern in data_patterns:
+            data_match = re.search(pattern, curl_command, re.DOTALL)
+            if data_match:
+                self.body = data_match.group(1)
+                if 'Content-Type' not in self.headers:
+                    self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+                # 如果没有指定方法，设置为 POST
+                if not method_match:
+                    self.method = 'POST'
+                break
         
         # 设置默认协议
         self.protocol = 'HTTP/1.1'
