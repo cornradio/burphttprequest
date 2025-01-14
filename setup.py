@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="burphttp",
-    version="0.1.4",
+    version="0.1.5",
     author="kasusa",
     author_email="kasusaland@gmail.com",  # 请填写您的邮箱
     description="一个用于解析和发送HTTP请求的Python库，支持代理和保存响应",

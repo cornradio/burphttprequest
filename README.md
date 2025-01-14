@@ -78,3 +78,4 @@ https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 ## 更新日志
 
 - v0.1.4 2025-01-13 支持设置host
+- v0.1.5 2025-01-14 支持解析curl(bash)请求

@@ -198,6 +198,61 @@ class burphttp:
         # 设置新的host
         self.headers['Host'] = host
 
+    def parse_curl(self, curl_command: str) -> str:
+        """解析curl命令并转换为HTTP请求，并返回原始请求字符串
+        chrome-网络-复制-cURL(bash)
+        
+        Args:
+            curl_command: curl命令字符串
+            
+        Returns:
+            str: 原始HTTP请求字符串
+        """
+        # 移除开头的curl和结尾的引号（如果有）
+        curl_command = curl_command.strip()
+        if curl_command.startswith('curl '):
+            curl_command = curl_command[5:]
+        
+        # 使用正则表达式解析参数
+        url_match = re.search(r'["\']?(https?://[^"\']+)["\']?', curl_command)
+        if url_match:
+            url = url_match.group(1)
+            parsed_url = urlparse(url)
+            self.path = url
+            self.headers['Host'] = parsed_url.netloc
+        
+        # 解析请求方法
+        method_match = re.search(r'-X\s+([A-Z]+)', curl_command)
+        self.method = method_match.group(1) if method_match else 'GET'
+        
+        # 解析请求头
+        header_matches = re.finditer(r'-H\s+["\']([^"\']+)["\']', curl_command)
+        for match in header_matches:
+            header = match.group(1)
+            if ':' in header:
+                key, value = header.split(':', 1)
+                self.headers[key.strip()] = value.strip()
+        
+        # 解析请求体
+        data_match = re.search(r'--data\s+["\']([^"\']+)["\']', curl_command)
+        if data_match:
+            self.body = data_match.group(1)
+            if 'Content-Type' not in self.headers:
+                self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        
+        # 设置默认协议
+        self.protocol = 'HTTP/1.1'
+        
+        # 构建并返回原始请求字符串
+        request_line = f'{self.method} {self.path} {self.protocol}'
+        headers = '\n'.join(f'{k}: {v}' for k, v in self.headers.items())
+        request = f'{request_line}\n{headers}'
+        
+        if self.body:
+            request += f'\n\n{self.body}'
+            
+        return request
+
 def process_request(input_data: Union[str, bytes]) -> str:
     """处理 HTTP 请求并返回响应"""
     parser = burphttp()
