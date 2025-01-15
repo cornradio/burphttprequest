@@ -29,14 +29,22 @@ bq = burphttp()
 # 从文件读取请求
 bq.parse_request_from_file("request.http")
 
-# 从curl命令读取请求
-bq.parse_request_from_curl("curlcommand.txt")
+# 从http字符串读取请求
+request_content = open('req.http', 'r') .read()
+bq.parse_request(request_content)
+
+# 从curl 字符串命令读取请求
+request_content = open('curlcommand.txt', 'r') .read()
+bq.parse_curl(request_content)
 
 # 设置代理（可选）
 bq.set_proxy("http://127.0.0.1:8080")
 
 # 设置Cookie（可选）
 bq.set_cookie("session=abc123; user=test; phpsessionid=123456")
+
+# 设置host（可选）
+bq.set_host("www.baidu.com")
 
 # 移除压缩编码（可选）
 bq.fixEncoding()
@@ -55,31 +63,25 @@ print(bq.response_body)         # 响应体
 
 ## HTTP请求文件格式
 
-请求文件格式示例：
-
-```http
-POST /api/test HTTP/1.1
-Host: example.com
-Content-Type: application/json
-
-{"key": "value"}
-```
-
 可以用火狐浏览器获取原始请求
-GET: 
-- 右键-复制请求头（Q）
-POST:
-- 右键-复制请求头（Q）
-- 手动起一个空行
-- 右键-复制Post数据
 
-![image](https://github.com/user-attachments/assets/088cd298-9886-4756-982a-aa206ba57025)
+![image](https://i.imgur.com/gwulP4w.png)
 
 如果你不确定自己的请求体是否可用，可以借助这个vscode插件： 
 https://marketplace.visualstudio.com/items?itemName=humao.rest-client
 
+## curl命令解析模式
+
+curl命令解析模式支持chrome浏览器右键-复制请求 curl(bash)
+
+
+![image](https://i.imgur.com/ueef3K4.png)
+
+推荐一个网站，可以解析curl命令到http请求：
+https://curlconverter.com/http/
 
 ## 更新日志
 
 - v0.1.4 2025-01-13 支持设置host
 - v0.1.6 2025-01-14 支持解析curl(bash)请求 
+- v0.1.7 2025-01-15 修复了https时候的cookie消失问题
