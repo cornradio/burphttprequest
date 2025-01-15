@@ -24,11 +24,13 @@ class burphttp:
         
         Args:
             proxy_url: 代理服务器URL，如 "http://127.0.0.1:8080"
+            如果输入为空字符串，则不设置代理
         """
-        self.proxies = {
-            'http': proxy_url,
-            'https': proxy_url
-        }
+        if proxy_url != "":   
+            self.proxies = {
+                'http': proxy_url,
+                'https': proxy_url
+            }
     
     def parse_request(self, request: Union[str, bytes]) -> None:
         """解析 HTTP 请求字符串或文件内容"""
