@@ -1,6 +1,6 @@
 import re
 from typing import Union, Dict, Tuple
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode
 import requests
 import os
 
@@ -18,6 +18,8 @@ class burphttp:
         self.response_body: str = ""
         self.response_status_code: int = 0
         self.response_status_reason: str = ""
+        
+        self.params: Dict[str, list] = {}
         
     def set_proxy(self, proxy_url: str) -> None:
         """设置HTTP代理
@@ -45,7 +47,14 @@ class burphttp:
         # 解析头部
         lines = headers_part.split('\n')
         request_line = lines[0].strip()
-        self.method, self.path, self.protocol = request_line.split(' ')
+        self.method, full_path, self.protocol = request_line.split(' ')
+        
+        # 解析路径和查询参数
+        url_parts = full_path.split('?', 1)
+        self.path = url_parts[0]
+        if len(url_parts) > 1:
+            query_string = url_parts[1]
+            self.params = parse_qs(query_string)
         
         # 解析其他头部字段
         for line in lines[1:]:
@@ -55,65 +64,87 @@ class burphttp:
                 self.headers[key.strip()] = value.strip()
     
     def send_request(self) -> str:
-        """发送 HTTP 请求并返回响应字符串"""
-        try:
-            # 构建完整 URL
-            if not self.path.startswith('http'):
-                host = self.headers.get('Host', '')
-                self.path = f'http://{host}{self.path}'
-                
-            # 发送请求
-            response = requests.request(
-                method=self.method,
-                url=self.path,
-                headers=self.headers,
-                data=self.body,
-                proxies=self.proxies,  # 添加代理支持
-                verify=False,  # 禁用SSL验证，通常代理调试时需要
-                timeout=10  # 添加超时设置
-            )
-            
-            # 存储响应信息
-            self.response_status_code = response.status_code
-            self.response_status_reason = response.reason
-            self.response_headers = dict(response.headers)
-            
-            # 处理响应编码
-            content_type = response.headers.get('content-type', '').lower()
-            if 'charset=' in content_type:
-                # 从Content-Type中获取编码
-                charset = content_type.split('charset=')[-1].split(';')[0]
-                self.response_body = response.content.decode(charset, errors='replace')
-            elif 'json' in content_type:
-                # JSON默认使用UTF-8
-                self.response_body = response.content.decode('utf-8', errors='replace')
-            elif 'text' in content_type:
-                # 文本内容尝试使用UTF-8
-                self.response_body = response.content.decode('utf-8', errors='replace')
-            else:
-                # 其他情况，尝试自动检测编码
-                try:
-                    self.response_body = response.content.decode('utf-8', errors='replace')
-                except UnicodeDecodeError:
-                    try:
-                        self.response_body = response.content.decode('gbk', errors='replace')
-                    except UnicodeDecodeError:
-                        # 如果都失败了，使用二进制形式显示
-                        self.response_body = f"[Binary content length: {len(response.content)} bytes]"
-            
-        except requests.exceptions.RequestException as e:
-            # 处理请求错误
-            self.response_status_code = 500
-            self.response_status_reason = "Internal Error"
-            self.response_headers = {"Content-Type": "text/plain"}
-            self.response_body = f"请求失败: {str(e)}"
+        """发送 HTTP 请求并返回响应字符串
+        
+        Returns:
+            str: 完整的HTTP响应字符串，包含状态行、响应头和响应体
+        
+        Raises:
+            requests.exceptions.RequestException: 当请求发生错误时
+        """
+        # 构建完整URL
+        url = self._build_full_url()
+        
+        # 发送请求
+        response = requests.request(
+            method=self.method,
+            url=url,
+            headers=self.headers,
+            data=self.body if self.body else None,
+            proxies=self.proxies,
+            verify=False  # 禁用SSL验证
+        )
+        
+        # 保存响应信息
+        self.response_status_code = response.status_code
+        self.response_status_reason = response.reason
+        self.response_headers = dict(response.headers)
+        self.response_body = response.text
         
         # 构建完整响应字符串
-        status_line = f'HTTP/1.1 {self.response_status_code} {self.response_status_reason}'
-        headers = '\n'.join(f'{k}: {v}' for k, v in self.response_headers.items())
-        self.response = f'{status_line}\n{headers}\n\n{self.response_body}'
+        status_line = f"HTTP/1.1 {self.response_status_code} {self.response_status_reason}"
+        headers = '\n'.join(f"{k}: {v}" for k, v in self.response_headers.items())
+        self.response = f"{status_line}\n{headers}\n\n{self.response_body}"
         
         return self.response
+
+    def _build_full_url(self) -> str:
+        """构建完整的请求URL，包含查询参数"""
+        base_url = self.path
+        if not base_url.startswith('http'):
+            host = self.headers.get('Host', '')
+            base_url = f'http://{host}{self.path}'
+        
+        # 如果有查询参数，添加到URL中
+        if self.params:
+            # 移除原有的查询参数（如果有）
+            url_parts = base_url.split('?', 1)
+            base_url = url_parts[0]
+            # 将参数添加到URL
+            query_string = urlencode(self.params, doseq=True)
+            base_url = f"{base_url}?{query_string}"
+            
+        return base_url
+    
+    def set_params(self, params: Dict[str, Union[str, list]]) -> None:
+        """设置URL查询参数
+        
+        Args:
+            params: 参数字典，值可以是字符串或列表
+        """
+        # 确保所有的值都是列表形式
+        self.params = {k: v if isinstance(v, list) else [v] for k, v in params.items()}
+    
+    def get_params(self) -> Dict[str, list]:
+        """获取当前的URL查询参数
+        
+        Returns:
+            Dict[str, list]: 当前的查询参数
+        """
+        return self.params
+    
+    def add_param(self, key: str, value: Union[str, list]) -> None:
+        """添加单个查询参数
+        
+        Args:
+            key: 参数名
+            value: 参数值，可以是字符串或列表
+        """
+        if isinstance(value, list):
+            self.params[key] = value
+        else:
+            self.params[key] = [value]
+
 
     def set_cookie(self, cookie_str: str) -> None:
         """设置Cookie，支持一个或多个cookie值
@@ -121,6 +152,7 @@ class burphttp:
         Args:
             cookie_str: Cookie字符串，格式如 "name1=value1; name2=value2" 或 "name=value"
         """
+        cookie_str = cookie_str.strip('\n')
         self.headers['Cookie'] = cookie_str
         
     def save_response(self, file_path: str) -> None:
@@ -174,19 +206,6 @@ class burphttp:
         if 'Accept-Encoding' in self.headers:
             del self.headers['Accept-Encoding']
 
-    def parse_request_from_file(self, file_path: str) -> None:
-        """从文件读取并解析HTTP请求
-        
-        Args:
-            file_path: HTTP请求文件的路径
-        """
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                request_content = f.read()
-            self.parse_request(request_content)
-        except Exception as e:
-            print(f"从文件读取请求失败: {str(e)}")
-            raise
 
     def set_host(self, host: str) -> None:
         """设置请求的Host头
@@ -222,6 +241,8 @@ class burphttp:
             parsed_url = urlparse(url)
             self.path = url
             self.headers['Host'] = parsed_url.netloc
+            # 根据URL scheme设置协议
+            self.protocol = 'HTTP/2' if parsed_url.scheme == 'https' else 'HTTP/1.1'
         
         # 解析请求方法
         method_match = re.search(r'-X\s+([A-Z]+)', curl_command)
@@ -267,8 +288,25 @@ class burphttp:
             
         return request
 
-def process_request(input_data: Union[str, bytes]) -> str:
-    """处理 HTTP 请求并返回响应"""
-    parser = burphttp()
-    parser.parse_request(input_data)
-    return parser.send_request() 
+    def get_request_str(self) -> str:
+        """返回完整的HTTP请求字符串，包含请求行、请求头和请求体
+        
+        Returns:
+            str: 完整的HTTP请求字符串
+        """
+        # 构建请求行
+        request_line = f'{self.method} {self.path} {self.protocol}'
+        
+        # 构建请求头
+        headers = '\n'.join(f'{k}: {v}' for k, v in self.headers.items())
+        
+        # 组合请求字符串
+        request = f'{request_line}\n{headers}'
+        
+        # 如果有请求体，添加空行和请求体
+        if self.body:
+            request += f'\n\n{self.body}'
+        else:
+            request += '\n\n'
+            
+        return request

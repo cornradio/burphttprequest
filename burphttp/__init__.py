@@ -1,3 +1,3 @@
-from .burphttp import burphttp, process_request
+from .burphttp import burphttp
 
-__all__ = ['burphttp', 'process_request'] 
+__all__ = ['burphttp'] 
