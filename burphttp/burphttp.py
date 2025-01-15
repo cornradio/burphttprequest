@@ -2,7 +2,12 @@ import re
 from typing import Union, Dict, Tuple
 from urllib.parse import urlparse, parse_qs, urlencode
 import requests
+from requests.models import PreparedRequest
+import urllib3
 import os
+
+# 禁用不安全请求的警告
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class burphttp:
     def __init__(self):
@@ -20,6 +25,7 @@ class burphttp:
         self.response_status_reason: str = ""
         
         self.params: Dict[str, list] = {}
+        self.verify: bool = False  # 默认禁用SSL验证
         
     def set_proxy(self, proxy_url: str) -> None:
         """设置HTTP代理
@@ -75,14 +81,53 @@ class burphttp:
         # 构建完整URL
         url = self._build_full_url()
         
+        # 创建session以支持HTTP/2
+        session = requests.Session()
+        
+        # 如果有Cookie头，设置到session中
+        if 'Cookie' in self.headers:
+            # 解析Cookie字符串
+            cookie_str = self.headers['Cookie']
+            cookies = {}
+            for item in cookie_str.split(';'):
+                if '=' in item:
+                    name, value = item.strip().split('=', 1)
+                    cookies[name] = value
+            # 设置到session中
+            session.cookies.update(cookies)
+            # 移除headers中的Cookie，因为已经设置到session中了
+            del self.headers['Cookie']
+        
+        # 添加默认请求头
+        default_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'text/html',
+            'Accept-Language': 'en,zh-CN;q=0.9,zh;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+            'Priority': 'u=1, i'
+        }
+        
+        # 合并默认头部和用户设置的头部，用户设置的优先级更高
+        headers = {**default_headers, **self.headers}
+        
         # 发送请求
-        response = requests.request(
+        response = session.request(
             method=self.method,
             url=url,
-            headers=self.headers,
+            headers=headers,
             data=self.body if self.body else None,
             proxies=self.proxies,
-            verify=False  # 禁用SSL验证
+            verify=self.verify,
+            allow_redirects=True
         )
         
         # 保存响应信息
@@ -92,7 +137,8 @@ class burphttp:
         self.response_body = response.text
         
         # 构建完整响应字符串
-        status_line = f"HTTP/1.1 {self.response_status_code} {self.response_status_reason}"
+        protocol = 'HTTP/2' if response.raw.version == 2 else 'HTTP/1.1'
+        status_line = f"{protocol} {self.response_status_code} {self.response_status_reason}"
         headers = '\n'.join(f"{k}: {v}" for k, v in self.response_headers.items())
         self.response = f"{status_line}\n{headers}\n\n{self.response_body}"
         
@@ -310,3 +356,27 @@ class burphttp:
             request += '\n\n'
             
         return request
+
+    def get_request(self) -> requests.PreparedRequest:
+        """返回一个已准备好的requests.PreparedRequest对象
+        
+        Returns:
+            requests.PreparedRequest: 可以直接用session发送的请求对象
+        """
+        # 构建完整URL
+        url = self._build_full_url()
+            
+        # 创建request对象
+        req = requests.Request(
+            method=self.method,
+            url=url,
+            headers=self.headers,
+            data=self.body if self.body else None
+        )
+        
+        # 准备请求
+        session = requests.Session()
+        session.verify = self.verify  # 设置session的verify属性
+        prepared_req = session.prepare_request(req)
+        
+        return prepared_req
